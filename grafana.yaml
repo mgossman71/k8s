@@ -1,0 +1,197 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  selector:
+    app: grafana
+  ports:
+  - protocol: TCP
+    port: 3000
+    nodePort: 32585
+  type: NodePort
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2019-07-18T21:32:07Z"
+  generation: 1
+  labels:
+    app: grafana
+    chart: grafana-3.3.10
+    heritage: Tiller
+    release: prometheus-operator
+  name: prometheus-operator-grafana
+  namespace: monitoring
+  resourceVersion: "2826421"
+  selfLink: /apis/extensions/v1beta1/namespaces/monitoring/deployments/prometheus-operator-grafana
+  uid: b27ea127-444a-499a-9411-170dc8ee8abd
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: grafana
+      release: prometheus-operator
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: c91520bf2b2be027a77c095ef42155b03997f3ce1bb5c0cf2fe73ffdaab0fbf1
+        checksum/dashboards-json-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/sc-dashboard-provider-config: bf4c8db719e02c4805011f112a765c8be34fe3968d7d8d445b2676f43d924407
+        checksum/secret: 7181e24a2daebc9bd1f0d708196a1f6c95430543e9e08920c9a5b2cb639c7799
+      creationTimestamp: null
+      labels:
+        app: grafana
+        release: prometheus-operator
+    spec:
+      containers:
+      - env:
+        - name: LABEL
+          value: grafana_dashboard
+        - name: FOLDER
+          value: /tmp/dashboards
+        image: kiwigrid/k8s-sidecar:0.0.16
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-dashboard
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp/dashboards
+          name: sc-dashboard-volume
+      - env:
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: prometheus-operator-grafana
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: prometheus-operator-grafana
+        image: grafana/grafana:6.2.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 80
+          name: service
+          protocol: TCP
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/health
+            port: 3000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /etc/grafana/ldap.toml
+          name: ldap
+          subPath: ldap.toml
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /tmp/dashboards
+          name: sc-dashboard-volume
+        - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
+          name: sc-dashboard-provider
+          subPath: provider.yaml
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - env:
+        - name: METHOD
+          value: LIST
+        - name: LABEL
+          value: grafana_datasource
+        - name: FOLDER
+          value: /etc/grafana/provisioning/datasources
+        image: kiwigrid/k8s-sidecar:0.0.16
+        imagePullPolicy: IfNotPresent
+        name: grafana-sc-datasources
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: sc-datasources-volume
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+      serviceAccount: prometheus-operator-grafana
+      serviceAccountName: prometheus-operator-grafana
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: prometheus-operator-grafana
+        name: config
+      - name: ldap
+        secret:
+          defaultMode: 420
+          items:
+          - key: ldap-toml
+            path: ldap.toml
+          secretName: prometheus-operator-grafana
+      - emptyDir: {}
+        name: storage
+      - emptyDir: {}
+        name: sc-dashboard-volume
+      - configMap:
+          defaultMode: 420
+          name: prometheus-operator-grafana-config-dashboards
+        name: sc-dashboard-provider
+      - emptyDir: {}
+        name: sc-datasources-volume
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2019-07-18T21:34:09Z"
+    lastUpdateTime: "2019-07-18T21:34:09Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2019-07-18T21:32:08Z"
+    lastUpdateTime: "2019-07-18T21:34:09Z"
+    message: ReplicaSet "prometheus-operator-grafana-85499cb477" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

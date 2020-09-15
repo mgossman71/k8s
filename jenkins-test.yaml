@@ -1,0 +1,76 @@
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: jenkins-test-service
+# spec:
+#   selector:
+#     app: jenkins-test
+#   ports:
+#   - protocol: TCP
+#     port: 8080
+#     nodePort: 30667
+#   type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-vol
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: slow
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /volume1/k8s-jenkins
+    server: 10.10.0.217
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-vol-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: slow
+  # selector:
+  #   matchLabels:
+  #     release: "stable"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-test-deployment
+  labels:
+    app: jenkins-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-test
+  template:
+    metadata:
+      labels:
+        app: jenkins-test
+    spec:
+      volumes:
+      - name: nfs-volume
+        persistentVolumeClaim:
+          claimName: jenkins-vol-claim
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins
+        volumeMounts:
+        - name: nfs-volume
+          mountPath: /var/jenkins_home
+        ports:
+        - containerPort: 8080

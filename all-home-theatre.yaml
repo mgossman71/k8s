@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: all-home-theatre-deployment
+  labels:
+    app: pms-docker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pms-docker
+  template:
+    metadata:
+      labels:
+        app: pms-docker
+    spec:
+      volumes:
+      - name: nfs-volume-plex1
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/plex
+      - name: nfs-volume-movies
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/Movies
+      - name: nfs-volume-tv1
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows
+      - name: nfs-volume-tv2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows1
+      - name: nfs-volume-sabnzb
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      containers:
+      - name: pms-docker
+        image: plexinc/pms-docker
+        volumeMounts:
+        - name: nfs-volume-plex1
+          mountPath: /config
+        - name: nfs-volume-movies
+          mountPath: /mnt/movies
+        - name: nfs-volume-tv1
+          mountPath: /mnt/tv1
+        - name: nfs-volume-tv2
+          mountPath: /mnt/tv2
+        - name: nfs-volume-sabnzb
+          mountPath: /sabnzb
+        ports:
+        - containerPort: 32400
+metadata:
+  name: plexpy
+  labels:
+    app: plexpy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plexpy
+  template:
+    metadata:
+      labels:
+        app: plexpy
+    spec:
+      volumes:
+      - name: nfs-volume-plexpy
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/plexpy
+      - name: nfs-volume-downloads
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      containers:
+      - name: plexpy
+        image: linuxserver/plexpy
+        volumeMounts:
+        - name: nfs-volume-plexpy
+          mountPath: /config
+        - name: nfs-volume-downloads
+          mountPath: /mnt/sabnzb
+        ports:
+        - containerPort: 8181
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pms-docker-service
+spec:
+  selector:
+    app: pms-docker
+  ports:
+  - protocol: TCP
+    port: 32400
+    nodePort: 32400
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plexpy-service
+spec:
+  selector:
+    app: plexpy
+  ports:
+  - protocol: TCP
+    port: 8181
+    nodePort: 32404
+  type: NodePort

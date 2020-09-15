@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pms-docker2-deployment
+  labels:
+    app: pms-docker2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pms-docker2
+  template:
+    metadata:
+      labels:
+        app: pms-docker2
+    spec:
+      volumes:
+      - name: nfs-volume-plex-p2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/plex2
+      - name: nfs-volume-movies-p2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/Movies
+      - name: nfs-volume-tv1-p2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows
+      - name: nfs-volume-tv2-p2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows1
+      - name: nfs-volume-sabnzb-p2
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      containers:
+      - name: pms-docker
+        image: plexinc/pms-docker
+        volumeMounts:
+        - name: nfs-volume-plex-p2
+          mountPath: /config
+        - name: nfs-volume-movies-p2
+          mountPath: /mnt/movies
+        - name: nfs-volume-tv1-p2
+          mountPath: /mnt/tv1
+        - name: nfs-volume-tv2-p2
+          mountPath: /mnt/tv2
+        - name: nfs-volume-sabnzb-p2
+          mountPath: /sabnzb
+        ports:
+        - containerPort: 32400
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pms-docker2-service
+spec:
+  selector:
+    app: pms-docker2
+  ports:
+  - protocol: TCP
+    port: 32400
+    nodePort: 32407
+  type: NodePort

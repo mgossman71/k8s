@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plexpy-deployment
+  labels:
+    app: plexpy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plexpy
+  template:
+    metadata:
+      labels:
+        app: plexpy
+    spec:
+      volumes:
+      - name: nfs-volume-plexpy
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/plexpy
+      - name: nfs-volume-downloads
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      containers:
+      - name: plexpy
+        image: linuxserver/plexpy
+        volumeMounts:
+        - name: nfs-volume-plexpy
+          mountPath: /config
+        - name: nfs-volume-downloads
+          mountPath: /mnt/sabnzb
+        ports:
+        - containerPort: 8181
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plexpy-service
+spec:
+  selector:
+    app: plexpy
+  ports:
+  - protocol: TCP
+    port: 8181
+    nodePort: 32404
+  type: NodePort

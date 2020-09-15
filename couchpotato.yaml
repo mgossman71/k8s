@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couchpotato-deployment
+  labels:
+    app: couchpotato
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: couchpotato
+  template:
+    metadata:
+      labels:
+        app: couchpotato
+    spec:
+      volumes:
+      - name: nfs-volume-couchpotato
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/couchpotato
+      - name: nfs-volume-downloads
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      containers:
+      - name: couchpotato
+        image: linuxserver/couchpotato
+        volumeMounts:
+        - name: nfs-volume-couchpotato
+          mountPath: /config
+        - name: nfs-volume-downloads
+          mountPath: /mnt/sabnzb
+        ports:
+        - containerPort: 5050
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: couchpotato-service
+spec:
+  selector:
+    app: couchpotato
+  ports:
+  - protocol: TCP
+    port: 5050
+    nodePort: 32403
+  type: NodePort

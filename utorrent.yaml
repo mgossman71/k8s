@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: utorrent-deployment
+  labels:
+    app: utorrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: utorrent
+  template:
+    metadata:
+      labels:
+        app: utorrent
+    spec:
+      volumes:
+      - name: nfs-volume-utorrent-data
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/utorrent/data
+      - name: nfs-volume-utorrent-settings
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/linux-tools/docker/utorrent/settings
+      containers:
+      - name: utorrent
+        image: ekho/utorrent
+        volumeMounts:
+        - name: nfs-volume-utorrent-data
+          mountPath: /utorrent/data
+        - name: nfs-volume-utorrent-settings
+          mountPath: /utorrent/settings
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: utorrent-service
+spec:
+  selector:
+    app: utorrent
+  ports:
+  - protocol: TCP
+    port: 8080
+    nodePort: 32410
+  type: NodePort

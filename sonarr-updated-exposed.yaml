@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr-deployment
+  labels:
+    app: sonarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarr
+  template:
+    metadata:
+      labels:
+        app: sonarr
+    spec:
+      volumes:
+      - name: nfs-volume-sonarr
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sonarr-conf
+      - name: nfs-volume-downloads
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/sabnzb
+      - name: nfs-volume-tv-shows
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows
+      - name: nfs-volume-tv-shows1
+        nfs:
+          server: 10.10.0.217 # Change this!
+          path: /volume1/TV-Shows1
+      containers:
+      - name: sonarr
+        image: linuxserver/sonarr
+        volumeMounts:
+        - name: nfs-volume-sonarr
+          mountPath: /config
+        - name: nfs-volume-downloads
+          mountPath: /mnt/sabnzb
+        - name: nfs-volume-tv-shows
+          mountPath: /tv-shows
+        - name: nfs-volume-tv-shows1
+          mountPath: /tv-shows1
+        ports:
+        - containerPort: 8989
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-service
+spec:
+  selector:
+    app: sonarr
+  ports:
+  - protocol: TCP
+    port: 8989
+    nodePort: 32402
+  type: NodePort
