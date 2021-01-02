@@ -31,10 +31,10 @@ spec:
       - name: nfs-volume
         nfs:
           server: 10.10.0.217 # Change this!
-          path: /volume1/linux-tools/docker/jenkins
+          path: /volume1/jenkins-conf
       containers:
       - name: jenkins
-        image: jenkins/jenkins:2.189-alpine
+        image: jenkins/jenkins:latest
         volumeMounts:
         - name: nfs-volume
           mountPath: /var/jenkins_home

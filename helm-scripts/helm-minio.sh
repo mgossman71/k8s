@@ -1,8 +1,11 @@
 #!/bin/bash
 
+
+#--name=minio \
+
 helm install \
 --namespace=kube-system \
---name=minio \
+--generate-name \
 --set \
 accessKey="admin",\
 secretKey="Ork87bob",\

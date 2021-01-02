@@ -1,0 +1,27 @@
+NAME: minio-1603306290
+LAST DEPLOYED: Wed Oct 21 13:51:34 2020
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Minio can be accessed via port 9000 on the following DNS name from within your cluster:
+minio-1603306290.kube-system.svc.cluster.local
+
+To access Minio from localhost, run the below commands:
+
+  1. export POD_NAME=$(kubectl get pods --namespace kube-system -l "release=minio-1603306290" -o jsonpath="{.items[0].metadata.name}")
+
+  2. kubectl port-forward $POD_NAME 9000 --namespace kube-system
+
+Read more about port forwarding here: http://kubernetes.io/docs/user-guide/kubectl/kubectl_port-forward/
+
+You can now access Minio server on http://localhost:9000. Follow the below steps to connect to Minio server with mc client:
+
+  1. Download the Minio mc client - https://docs.minio.io/docs/minio-client-quickstart-guide
+
+  2. mc config host add minio-1603306290-local http://localhost:9000 admin Ork87bob S3v4
+
+  3. mc ls minio-1603306290-local
+
+Alternately, you can use your browser or the Minio SDK to access the server - https://docs.minio.io/categories/17

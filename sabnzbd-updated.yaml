@@ -24,7 +24,7 @@ spec:
           server: 10.10.0.217 # Change this!
           path: /volume1/sabnzb
       containers:
-      - name: pms-docker
+      - name: sabnzbd
         image: linuxserver/sabnzbd
         volumeMounts:
         - name: nfs-volume-sabnzb
